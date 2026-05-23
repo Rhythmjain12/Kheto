@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -123,6 +124,14 @@ class _AdvisorScreenState extends ConsumerState<AdvisorScreen> {
       _prefsLoaded = true;
     });
 
+    FirebaseAnalytics.instance.logEvent(
+      name: 'advisor_opened',
+      parameters: {
+        'language': language,
+        'has_fire_context': ref.read(fireContextProvider) != null ? 1 : 0,
+      },
+    );
+
     _initGemini();
   }
 
@@ -239,6 +248,14 @@ acknowledge your limitation and refer the farmer to Krishi Vigyan Kendra (KVK) h
   Future<void> _sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _isTyping || _chat == null) return;
+
+    FirebaseAnalytics.instance.logEvent(
+      name: 'chatbot_message_sent',
+      parameters: {
+        'language': _language,
+        'has_fire_context': ref.read(fireContextProvider) != null ? 1 : 0,
+      },
+    );
 
     _lastUserMessage = trimmed;
     _inputCtrl.clear();

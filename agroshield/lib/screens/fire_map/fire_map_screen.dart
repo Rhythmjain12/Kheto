@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -158,6 +159,11 @@ class _FireMapScreenState extends ConsumerState<FireMapScreen> {
       _loading = lat == null || lng == null ? false : true;
     });
 
+    FirebaseAnalytics.instance.logEvent(
+      name: 'fire_map_opened',
+      parameters: {'fire_count': prefs.getInt(PrefsKeys.homeFireCount) ?? 0},
+    );
+
     if (lat == null || lng == null) return;
 
     // Subscribe to Firestore fires collection
@@ -289,6 +295,14 @@ class _FireMapScreenState extends ConsumerState<FireMapScreen> {
 
   // ── Bottom sheet for a tapped fire marker ────────────────────────────────
   void _showFireSheet(_FireHotspot fire) {
+    FirebaseAnalytics.instance.logEvent(
+      name: 'fire_pin_tapped',
+      parameters: {
+        'fire_id': fire.id,
+        'distance_km': fire.distanceKm.round(),
+        'frp': fire.frp.round(),
+      },
+    );
     final str = _str;
     final distLabel =
         '${fire.distanceKm.toStringAsFixed(1)} ${str['km']}';
