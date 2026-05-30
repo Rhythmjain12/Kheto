@@ -44,6 +44,7 @@ HANDOFF_*.md
 Handoffs/
 PROJECT_MASTER.md
 PLAY_STORE_TASKS.md
+LINKEDIN_POSTS.md
 Claude artifacts/
 Google stitch front end pages/
 cleanup_old_fires.js
@@ -57,3 +58,10 @@ screenshots/
 **/.DS_Store
 WRAP_UP_PROMPT.md
 .claude/
+
+# Untracked images at repo root (one-off AI exports, duplicate logos)
+Gemini_Generated_Image_*.png
+khetogreen_*.png
+
+# Source folder for Play Store screenshots (large jpgs already mirrored to docs/screenshots/)
+agroshield/assets/PlayStore images/
