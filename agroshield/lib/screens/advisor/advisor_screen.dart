@@ -887,13 +887,118 @@ acknowledge your limitation and refer the farmer to Krishi Vigyan Kendra (KVK) h
               ),
             ),
             const SizedBox(height: 3),
-            Text(
-              _formatTime(msg.timestamp),
-              style:
-                  GoogleFonts.dmSans(fontSize: 10, color: AppTheme.textMuted),
+            // Timestamp + Report button row (Report is only shown for non-error AI messages
+            // — satisfies Google Play's generative-AI policy: users must be able to flag
+            // offensive or inaccurate AI-generated content.)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatTime(msg.timestamp),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 10, color: AppTheme.textMuted),
+                ),
+                if (!msg.isError) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _confirmReportAiMessage(msg, isHi),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 2, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.flag_outlined,
+                            size: 11,
+                            color: AppTheme.textMuted,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            isHi ? 'रिपोर्ट' : 'Report',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 10,
+                              color: AppTheme.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Report dialog for AI messages (Google Play generative-AI policy) ──────
+  Future<void> _confirmReportAiMessage(_ChatMessage msg, bool isHi) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.bgNav,
+        title: Text(
+          isHi ? 'इस जवाब को रिपोर्ट करें?' : 'Report this response?',
+          style: GoogleFonts.fraunces(
+              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 17),
+        ),
+        content: Text(
+          isHi
+              ? 'अगर यह जवाब गलत, हानिकारक, या अनुचित है तो हमें रिपोर्ट करें। हम इसकी समीक्षा करेंगे।'
+              : 'If this response is incorrect, harmful, or inappropriate, report it to our team. We will review it.',
+          style:
+              GoogleFonts.dmSans(color: AppTheme.textSub, fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              isHi ? 'रद्द करें' : 'Cancel',
+              style: GoogleFonts.dmSans(color: AppTheme.textMuted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              isHi ? 'रिपोर्ट करें' : 'Report',
+              style: GoogleFonts.dmSans(
+                  color: AppTheme.dangerRed, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    // Log to Firebase Analytics — message snippet is truncated to 100 chars
+    // because Firebase parameter values are capped at 100 characters.
+    final snippet =
+        msg.text.length > 100 ? msg.text.substring(0, 100) : msg.text;
+    await FirebaseAnalytics.instance.logEvent(
+      name: 'ai_response_reported',
+      parameters: {
+        'message_snippet': snippet,
+        'language': _language,
+        'has_fire_context': ref.read(fireContextProvider) != null ? 1 : 0,
+      },
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppTheme.bgNav,
+        content: Text(
+          isHi
+              ? 'रिपोर्ट दर्ज की गई। धन्यवाद।'
+              : 'Report received. Thank you.',
+          style: GoogleFonts.dmSans(color: Colors.white),
+        ),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
